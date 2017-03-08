@@ -1,8 +1,12 @@
 # coding=utf-8
 """Request handler for shows."""
 
+from medusa.search.manual import get_provider_cache_results
+
 from tornado.escape import json_decode
+
 from .base import BaseRequestHandler
+
 from .... import app
 from ....indexers.indexer_config import indexer_name_to_id
 from ....show.show import Show
@@ -88,6 +92,18 @@ class ShowHandler(BaseRequestHandler):
                 new, existing = tv_show.get_backlogged_episodes(allowed_qualities=allowed_qualities,
                                                                 preferred_qualities=preferred_qualities)
                 data = {'new': new, 'existing': existing}
+            elif query == 'manualSearch':
+                season = self._parse(self.get_argument('season', default=None), int)
+                episode = self._parse(self.get_argument('episode', default=None), int)
+                manual_search_type = self._parse(self.get_argument('manualSearchType', default='episode'), str)
+                show_all_results = self._parse(self.get_argument('showAllResults', default=False), bool)
+                perform_search = self._parse(self.get_argument('performSearch', default=False), bool)
+                show = tv_show.indexerid
+                indexer = tv_show.indexer
+                data = {'manualSearch:': get_provider_cache_results(indexer, show_all_results=show_all_results,
+                                                                    perform_search=perform_search,
+                                                                    show=show, season=season, episode=episode,
+                                                                    manual_search_type=manual_search_type)}
             elif query == 'archiveEpisodes':
                 # TODO: GET should never change data and the return should always be an episode,
                 # not this funny dict
